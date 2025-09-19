@@ -10,8 +10,6 @@ Este projeto foi desenvolvido como parte do curso **Técnico em Desenvolvimento 
 
 ### 👨‍💻 Equipe do Projeto
 - Flavio da Costa Marques
-- Jhony Reis
-- Pedro Azevedo
 - Rafael Pereira
 
 ---
