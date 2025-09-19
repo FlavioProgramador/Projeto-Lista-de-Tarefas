@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import CustomSelect from './CustomSelect.vue';
 
 const props = defineProps({
   tarefa: {
@@ -9,8 +10,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['statusUpdated', 'taskDeleted', 'editTask']);
-const handleStatusChange = (event) => {
-  const updatedTask = { ...props.tarefa, status: event.target.value };
+
+const handleStatusChange = (newStatus) => {
+  const updatedTask = { ...props.tarefa, status: newStatus };
   emit('statusUpdated', updatedTask);
 };
 
@@ -28,6 +30,9 @@ const formatarData = (dataString) => {
 
 const dataInicioFormatada = computed(() => formatarData(props.tarefa.data_inicio));
 const dataTerminoFormatada = computed(() => formatarData(props.tarefa.data_termino));
+
+// Defina as opções para o nosso seletor customizado
+const statusOptions = ['PENDENTE', 'ANDAMENTO', 'FINALIZADA'];
 </script>
 
 <template>
@@ -46,11 +51,11 @@ const dataTerminoFormatada = computed(() => formatarData(props.tarefa.data_termi
       </div>
 
       <div class="task-controls">
-        <select :value="tarefa.status" @change="handleStatusChange" class="status-select" title="Alterar status">
-          <option value="PENDENTE">Pendente</option>
-          <option value="ANDAMENTO">Em Andamento</option>
-          <option value="FINALIZADA">Finalizada</option>
-        </select>
+        <CustomSelect
+          :modelValue="tarefa.status"
+          :options="statusOptions"
+          @update:modelValue="handleStatusChange"
+        />
 
         <button @click="emit('editTask', tarefa)" class="btn-icon btn-edit" title="Editar tarefa">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -65,6 +70,7 @@ const dataTerminoFormatada = computed(() => formatarData(props.tarefa.data_termi
 </template>
 
 <style scoped>
+/* O CSS deste arquivo permanece o mesmo, exceto que a regra .status-select não é mais necessária */
 .task-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -85,11 +91,14 @@ const dataTerminoFormatada = computed(() => formatarData(props.tarefa.data_termi
 .task-card.andamento { border-left-color: var(--color-status-andamento); }
 .task-card.finalizada {
   border-left-color: var(--color-status-finalizada);
-  opacity: 0.7;
+}
+.task-card.finalizada .task-title,
+.task-card.finalizada .task-description,
+.task-card.finalizada .task-dates {
+  color: #aaa;
 }
 .task-card.finalizada .task-title {
   text-decoration: line-through;
-  color: #888;
 }
 .task-card-header {
   display: flex;
@@ -140,13 +149,6 @@ const dataTerminoFormatada = computed(() => formatarData(props.tarefa.data_termi
   display: flex;
   gap: 0.5rem;
   align-items: center;
-}
-.status-select {
-  padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
-  cursor: pointer;
 }
 .btn-icon {
   background: none;
