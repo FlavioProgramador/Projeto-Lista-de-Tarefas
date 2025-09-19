@@ -5,18 +5,45 @@ import TaskItem from './components/TaskItem.vue';
 
 const API_URL = 'http://127.0.0.1:8000/api/tarefas/';
 
-const tarefas = ref([]);
-const loading = ref(true);
+const getTarefaInicial = () => ({
+  titulo: '',
+  descricao: '',
+  data_inicio: new Date().toISOString().split('T')[0],
+  data_termino: '',
+  prioridade: 'MEDIA',
+  status: 'PENDENTE'
+});
 
-const buscarTarefas = async () => {
-  loading.value = true;
+const tarefas = ref([]);
+const novaTarefa = ref(getTarefaInicial());
+const loading = ref(true);
+const isSubmitting = ref(false);
+
+const buscarTarefas = async () => { /* ...código do passo anterior... */ };
+
+const adicionarTarefa = async () => {
+  if (!novaTarefa.value.titulo || !novaTarefa.value.data_termino) {
+    alert('Preencha os campos obrigatórios.');
+    return;
+  }
+  isSubmitting.value = true;
+  // Atualização Otimista
+  const tarefaTemporaria = { ...novaTarefa.value, id: Date.now() };
+  tarefas.value.unshift(tarefaTemporaria);
+
   try {
-    const response = await axios.get(API_URL);
-    tarefas.value = response.data;
+    const response = await axios.post(API_URL, novaTarefa.value);
+    // Substitui a tarefa temporária pela real vinda da API
+    const index = tarefas.value.findIndex(t => t.id === tarefaTemporaria.id);
+    if (index !== -1) tarefas.value[index] = response.data;
+    novaTarefa.value = getTarefaInicial();
   } catch (error) {
-    console.error('Erro ao buscar tarefas:', error);
+    console.error('Erro ao adicionar tarefa:', error);
+    alert('Erro ao salvar a tarefa.');
+    // Reverte a atualização otimista em caso de erro
+    tarefas.value = tarefas.value.filter(t => t.id !== tarefaTemporaria.id);
   } finally {
-    loading.value = false;
+    isSubmitting.value = false;
   }
 };
 
@@ -26,43 +53,75 @@ onMounted(buscarTarefas);
 <template>
   <div class="container">
     <header class="app-header">
-      <h1>🚀 Gerenciador de Tarefas</h1>
-      <p>Organize, priorize e conquiste seus objetivos.</p>
-    </header>
+      </header>
+
+    <div class="form-container card">
+      <h3>➕ Adicionar Nova Tarefa</h3>
+      <form @submit.prevent="adicionarTarefa" class="task-form">
+        <input type="text" v-model="novaTarefa.titulo" placeholder="O que precisa ser feito? *" required />
+        <textarea v-model="novaTarefa.descricao" placeholder="Adicione uma descrição..."></textarea>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="data-termino">Término</label>
+            <input id="data-termino" type="date" v-model="novaTarefa.data_termino" required />
+          </div>
+          <div class="form-group">
+            <label for="prioridade">Prioridade</label>
+            <select id="prioridade" v-model="novaTarefa.prioridade">
+              <option value="BAIXA">Baixa</option>
+              <option value="MEDIA">Média</option>
+              <option value="ALTA">Alta</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-submit" :disabled="isSubmitting">
+            <span v-if="isSubmitting">Salvando...</span>
+            <span v-else>+ Adicionar</span>
+          </button>
+        </div>
+      </form>
+    </div>
 
     <main class="tasks-container">
-      <div v-if="loading" class="feedback-message">Carregando tarefas... ⏳</div>
-      <div v-else-if="tarefas.length === 0" class="feedback-message">
-        🎉 Nenhuma tarefa na lista. Comece adicionando uma!
-      </div>
-      <ul v-else class="task-list">
-        <TaskItem
-          v-for="tarefa in tarefas"
-          :key="tarefa.id"
-          :tarefa="tarefa"
-        />
-      </ul>
-    </main>
+      </main>
   </div>
 </template>
 
 <style>
-/* Estilos globais (os mesmos do passo 1) */
-body {
-  background-color: #f4f7f9;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #2c3e50;
-  margin: 0;
+/* ...estilos globais anteriores... */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-.container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 1rem;
+.form-container { padding: 2rem; margin-bottom: 2.5rem; }
+.task-form { display: flex; flex-direction: column; gap: 1rem; }
+.task-form input, .task-form textarea, .task-form select {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
-.app-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
 }
-.task-list { list-style: none; padding: 0; }
-.feedback-message { text-align: center; padding: 3rem 1rem; color: #777; }
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.form-group label { font-size: 0.85rem; font-weight: 500; }
+.form-actions { display: flex; justify-content: flex-end; }
+.btn-submit {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #4a90e2;
+  color: white;
+}
+.btn-submit:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 </style>
